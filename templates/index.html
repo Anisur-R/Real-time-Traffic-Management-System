@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Traffic Control System</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a252f; color: white; text-align: center; margin: 0; padding: 20px; }
+        h1 { margin-bottom: 5px; }
+        .intersection { display: flex; justify-content: center; gap: 50px; margin-top: 40px; }
+        .road { background: #2c3e50; padding: 30px; border-radius: 20px; width: 200px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+        
+        /* Light base state */
+        .light { width: 70px; height: 70px; border-radius: 50%; margin: 15px auto; border: 4px solid #111; transition: 0.4s; }
+        
+        /* Dim colors (Off state) */
+        .red-off { background: #4d1a1a; }
+        .yellow-off { background: #4d431a; }
+        .green-off { background: #1a4d2e; }
+
+        /* Bright colors (On state) */
+        .red-on { background: #ff4757; box-shadow: 0 0 30px #ff4757; border-color: #fff; }
+        .yellow-on { background: #eab000; box-shadow: 0 0 30px #eab000; border-color: #fff; }
+        .green-on { background: #2ed573; box-shadow: 0 0 30px #2ed573; border-color: #fff; }
+
+        .timer { font-size: 28px; font-weight: bold; margin-top: 20px; color: #ecf0f1; }
+        .controls { margin-top: 40px; }
+        button { padding: 12px 25px; font-size: 16px; cursor: pointer; border: none; border-radius: 8px; margin: 5px; transition: 0.3s; font-weight: bold; }
+        .emergency { background: #e74c3c; color: white; }
+        .reset { background: #95a5a6; color: white; }
+        button:hover { transform: translateY(-3px); opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <h1>Real-time Traffic Management System</h1>
+    <p>Status: <span id="status-text">Operating Normally</span></p>
+
+    <div class="intersection">
+        <div class="road">
+            <h3>North-South</h3>
+            <div id="ns-red" class="light red-off"></div>
+            <div id="ns-yellow" class="light yellow-off"></div>
+            <div id="ns-green" class="light green-off"></div>
+            <div id="ns-timer" class="timer">--</div>
+        </div>
+
+        <div class="road">
+            <h3>East-West</h3>
+            <div id="ew-red" class="light red-off"></div>
+            <div id="ew-yellow" class="light yellow-off"></div>
+            <div id="ew-green" class="light green-off"></div>
+            <div id="ew-timer" class="timer">--</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="emergency" onclick="triggerEmergency()">Emergency Mode (NS Green)</button>
+        <button class="reset" onclick="resetSystem()">Reset System</button>
+    </div>
+
+    <script>
+        let currentState = 'ns-green'; // States: ns-green, ns-yellow, ew-green, ew-yellow
+        let timeLeft = 10;
+        let isEmergency = false;
+
+        function updateUI() {
+            if (isEmergency) return;
+
+            resetLights();
+
+            if (currentState === 'ns-green') {
+                document.getElementById('ns-green').classList.replace('green-off', 'green-on');
+                document.getElementById('ew-red').classList.replace('red-off', 'red-on');
+                document.getElementById('ns-timer').innerText = timeLeft + 's';
+                document.getElementById('ew-timer').innerText = '--';
+            } 
+            else if (currentState === 'ns-yellow') {
+                document.getElementById('ns-yellow').classList.replace('yellow-off', 'yellow-on');
+                document.getElementById('ew-red').classList.replace('red-off', 'red-on');
+                document.getElementById('ns-timer').innerText = timeLeft + 's';
+                document.getElementById('ew-timer').innerText = '--';
+            } 
+            else if (currentState === 'ew-green') {
+                document.getElementById('ew-green').classList.replace('green-off', 'green-on');
+                document.getElementById('ns-red').classList.replace('red-off', 'red-on');
+                document.getElementById('ew-timer').innerText = timeLeft + 's';
+                document.getElementById('ns-timer').innerText = '--';
+            }
+            else if (currentState === 'ew-yellow') {
+                document.getElementById('ew-yellow').classList.replace('yellow-off', 'yellow-on');
+                document.getElementById('ns-red').classList.replace('red-off', 'red-on');
+                document.getElementById('ew-timer').innerText = timeLeft + 's';
+                document.getElementById('ns-timer').innerText = '--';
+            }
+
+            timeLeft--;
+
+            if (timeLeft < 0) {
+                if (currentState === 'ns-green') { currentState = 'ns-yellow'; timeLeft = 3; }
+                else if (currentState === 'ns-yellow') { currentState = 'ew-green'; timeLeft = 10; }
+                else if (currentState === 'ew-green') { currentState = 'ew-yellow'; timeLeft = 3; }
+                else { currentState = 'ns-green'; timeLeft = 10; }
+            }
+        }
+
+        function resetLights() {
+            document.querySelectorAll('.light').forEach(light => {
+                const id = light.id;
+                if (id.includes('red')) light.className = 'light red-off';
+                if (id.includes('yellow')) light.className = 'light yellow-off';
+                if (id.includes('green')) light.className = 'light green-off';
+            });
+        }
+
+        function triggerEmergency() {
+            isEmergency = true;
+            resetLights();
+            document.getElementById('status-text').innerText = "EMERGENCY: ALL NORTH-SOUTH GREEN";
+            document.getElementById('ns-green').classList.replace('green-off', 'green-on');
+            document.getElementById('ew-red').classList.replace('red-off', 'red-on');
+            document.getElementById('ns-timer').innerText = "PRIORITY";
+            document.getElementById('ew-timer').innerText = "STOP";
+        }
+
+        function resetSystem() {
+            isEmergency = false;
+            currentState = 'ns-green';
+            timeLeft = 10;
+            document.getElementById('status-text').innerText = "Operating Normally";
+        }
+
+        setInterval(updateUI, 1000);
+    </script>
+</body>
+</html>
